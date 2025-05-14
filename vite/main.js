@@ -34,7 +34,7 @@ const db = new duckdb.AsyncDuckDB(logger, worker);
 await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
 
 // Setup step: Clear all files from OPFS so we start with a fresh DB
-var opfsRoot = await navigator.storage.getDirectory();
+const opfsRoot = await navigator.storage.getDirectory();
 for await (const handle of opfsRoot.values()) {
   await opfsRoot.removeEntry(handle.name, {
     recursive: handle.kind === "directory",
@@ -57,7 +57,6 @@ const parquetBuffer = await fetch("/orders_0.01.parquet").then(
 );
 
 // Step 2: Copy the data into OPFS
-var opfsRoot = await navigator.storage.getDirectory();
 const fileHandle = await opfsRoot.getFileHandle("orders.parquet", {
   create: true,
 });
