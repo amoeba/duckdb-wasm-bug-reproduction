@@ -35,52 +35,61 @@ async function runWorkflow() {
   const db = new duckdb.AsyncDuckDB(logger, worker);
   await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
 
+  // Setup step: Clear all files from OPFS so we start with a fresh DB
+  const opfsRoot = await navigator.storage.getDirectory();
+  for await (const handle of opfsRoot.values()) {
+    await opfsRoot.removeEntry(handle.name, {
+      recursive: handle.kind === "directory",
+    });
+  }
+
+  // Open the DB from OPFS
   await db.open({
-    path: `opfs://${dbPath}`,
+    path: "opfs://mydb.db",
     accessMode: duckdb.DuckDBAccessMode.READ_WRITE,
   });
 
+  // and open a connection...
   let conn = await db.connect();
 
+  // Step 1: Create an ArrayBuffer instance from the Parquet data. I use fetch
+  // here but in your case you would want to use your File handle.
+  const parquetBuffer = await fetch("/orders_0.01.parquet").then(
+    (res) => res.arrayBuffer() // <- returns ArrayBuffer
+  );
+
   // Step 2: Copy the data into OPFS
-  const opfsRoot = await navigator.storage.getDirectory();
-  const fileHandle = await opfsRoot.getFileHandle(opfsFileName, {
+  const fileHandle = await opfsRoot.getFileHandle("orders.parquet", {
     create: true,
   });
   const writable = await fileHandle.createWritable();
-  await writable.write(fileBuffer);
+  await writable.write(parquetBuffer);
   await writable.close();
-
-  for await (let [name, handle] of opfsRoot.entries()) {
-    console.log({ name, handle });
-  }
 
   // Step 3: Register the file handle with DuckDB
   await db.registerFileHandle(
-    opfsFileName,
+    "orders.parquet",
     null,
     duckdb.DuckDBDataProtocol.BROWSER_FSACCESS,
     true
   );
 
   // Step 4: Work with the file as normal
-  // let create_res = await conn.send(
-  //   `CREATE TABLE ${tableName} AS SELECT * FROM read_parquet('${opfsFileName}')`
-  // );
-
-  await conn.send(`CREATE TABLE ${tableName} (x INTEGER);`);
+  await conn.send(
+    `CREATE TABLE orders AS SELECT * FROM read_parquet('orders.parquet')`
+  );
   await conn.send(`CHECKPOINT;`);
-
-  console.log("after CHECKPOINT");
-  const result1 = await conn.send(`SELECT * FROM ${tableName};`);
+  const result1 = await conn.send(`SELECT * FROM orders;`);
   for await (const batch of result1) {
-    console.log("got rows back:", batch.numRows);
+    console.log("got batch with ", batch.numRows, "rows");
   }
 
   // Closing everything
   await conn.close();
   await db.terminate();
   await worker.terminate();
+
+  console.log("Finished!");
 }
 
 function App() {
