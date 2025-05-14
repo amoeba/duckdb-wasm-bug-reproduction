@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import * as duckdb from "@duckdb/duckdb-wasm";
 import duckdb_wasm from "@duckdb/duckdb-wasm/dist/duckdb-mvp.wasm?url";
@@ -6,9 +6,7 @@ import mvp_worker from "@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js?ur
 import duckdb_wasm_next from "@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url";
 import eh_worker from "@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url";
 
-async function handleChange(e) {
-  console.log("handleChange called");
-
+async function initDuckDB() {
   const MANUAL_BUNDLES = {
     mvp: {
       mainModule: duckdb_wasm,
@@ -28,6 +26,15 @@ async function handleChange(e) {
   const logger = new duckdb.ConsoleLogger();
   const db = new duckdb.AsyncDuckDB(logger, worker);
   await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+
+  return { db: db, worker: worker };
+}
+
+async function handleChange(e, DBPromise) {
+  let dbm = await DBPromise;
+  console.log("handleChange called", { e, dbm });
+  let db = dbm.db;
+  let worker = dbm.worker;
 
   // Setup step: Clear all files from OPFS so we start with a fresh DB
   const opfsRoot = await navigator.storage.getDirectory();
@@ -86,13 +93,30 @@ async function handleChange(e) {
 }
 
 function App() {
+  const [isDBInitialized, setDBInitialized] = useState(false);
+  const [DBInstance, setDBInstance] = useState(null);
+
   useEffect(() => {
-    console.log("Hello from Effect!");
-  }, []);
+    console.log("useEffect triggered");
+
+    if (isDBInitialized) {
+      console.log("DB is already initialized");
+      return;
+    }
+
+    let db = initDuckDB();
+    setDBInstance(db);
+    setDBInitialized(true);
+  }, [isDBInitialized]);
 
   return (
     <>
-      <input type="file" onChange={handleChange} />
+      <input
+        type="file"
+        onChange={(e) => {
+          handleChange(e, DBInstance);
+        }}
+      />
     </>
   );
 }
