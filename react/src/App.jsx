@@ -6,14 +6,8 @@ import mvp_worker from "@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js?ur
 import duckdb_wasm_next from "@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url";
 import eh_worker from "@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url";
 
-async function runWorkflow() {
-  console.log("runWorkflow called");
-
-  const fileBuffer = await fetch("/orders_0.01.parquet").then(
-    (res) => res.arrayBuffer() // <- returns ArrayBuffer
-  );
-
-  console.log("got ArrayBuffer", { fileBuffer });
+async function handleChange(e) {
+  console.log("handleChange called");
 
   const MANUAL_BUNDLES = {
     mvp: {
@@ -52,11 +46,10 @@ async function runWorkflow() {
   // and open a connection...
   let conn = await db.connect();
 
-  // Step 1: Create an ArrayBuffer instance from the Parquet data. I use fetch
-  // here but in your case you would want to use your File handle.
-  const parquetBuffer = await fetch("/orders_0.01.parquet").then(
-    (res) => res.arrayBuffer() // <- returns ArrayBuffer
-  );
+  // Step 1: Create an ArrayBuffer instance from the Parquet data.
+  let file = e.target.files[0];
+  const parquetBuffer = await file.arrayBuffer();
+  console.log("got ArrayBuffer", { parquetBuffer });
 
   // Step 2: Copy the data into OPFS
   const fileHandle = await opfsRoot.getFileHandle("orders.parquet", {
@@ -94,13 +87,12 @@ async function runWorkflow() {
 
 function App() {
   useEffect(() => {
-    console.log("Hello!");
-    runWorkflow();
+    console.log("Hello from Effect!");
   }, []);
 
   return (
     <>
-      <div>Hello World</div>
+      <input type="file" onChange={handleChange} />
     </>
   );
 }
