@@ -28,13 +28,15 @@ export async function initDuckDB() {
   return { db: db, worker: worker };
 }
 
-export async function handleFile(file, DBPromise) {
+export async function runLoadAndQueryExample(DBPromise) {
   let dbm = await DBPromise;
-  console.log("handleFile called", { file, dbm });
+  console.log("runLoadAndQueryExample called", { dbm });
   let db = dbm.db;
   let worker = dbm.worker;
 
-  const parquetBuffer = await file.arrayBuffer();
+  const parquetBuffer = await fetch("/orders_0.01.parquet").then(
+    (res) => res.arrayBuffer() // <- returns ArrayBuffer
+  );
   console.log("got ArrayBuffer", { parquetBuffer });
 
   const opfsRoot = await navigator.storage.getDirectory();
@@ -77,7 +79,7 @@ export async function handleFile(file, DBPromise) {
   await conn.send(`CHECKPOINT;`);
   const result1 = await conn.send(`SELECT * FROM orders;`);
   for await (const batch of result1) {
-    console.log("got batch with ", batch.numRows, "rows");
+    console.log("Got batch with", batch.numRows, "rows");
   }
 
   // Closing everything

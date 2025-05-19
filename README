@@ -1,1 +1,4 @@
 Minimal reproductions for an issue with DuckDB WASM.
+
+- vite: Reproducer with plain web APIs using vite
+- react: Reproducer with React

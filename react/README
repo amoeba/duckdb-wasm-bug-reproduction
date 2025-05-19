@@ -1,0 +1,7 @@
+To reproduce:
+
+- Run `npm i`
+- Run `npm run dev` and go to your browser
+- Open the browser developer tool console
+
+You should see numerous messages like "got batch with N rows" and, finally, "Finished!".

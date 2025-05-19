@@ -79,7 +79,7 @@ await conn.send(
 await conn.send(`CHECKPOINT;`);
 const result1 = await conn.send(`SELECT * FROM orders;`);
 for await (const batch of result1) {
-  console.log("got batch with ", batch.numRows, "rows");
+  console.log("Got batch with", batch.numRows, "rows");
 }
 
 // Closing everything
