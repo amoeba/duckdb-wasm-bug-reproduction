@@ -24,7 +24,7 @@ function App() {
     }
     runLoadAndQueryExample(db);
     setIsExampleRun(true);
-  }, [isDBInitialized, isExampleRun]);
+  }, []);
 
   return <></>;
 }
