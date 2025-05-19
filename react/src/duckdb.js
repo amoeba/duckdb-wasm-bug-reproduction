@@ -40,14 +40,6 @@ export async function runLoadAndQueryExample(DBPromise) {
   console.log("got ArrayBuffer", { parquetBuffer });
 
   const opfsRoot = await navigator.storage.getDirectory();
-
-  // Setup step: Clear all files from OPFS so we start with a fresh DB
-  for await (const handle of opfsRoot.values()) {
-    await opfsRoot.removeEntry(handle.name, {
-      recursive: handle.kind === "directory",
-    });
-  }
-
   const fileHandle = await opfsRoot.getFileHandle("orders.parquet", {
     create: true,
   });

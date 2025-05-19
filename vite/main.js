@@ -33,13 +33,8 @@ const logger = new duckdb.ConsoleLogger();
 const db = new duckdb.AsyncDuckDB(logger, worker);
 await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
 
-// Setup step: Clear all files from OPFS so we start with a fresh DB
+// // Setup step: Clear all files from OPFS so we start with a fresh DB
 const opfsRoot = await navigator.storage.getDirectory();
-for await (const handle of opfsRoot.values()) {
-  await opfsRoot.removeEntry(handle.name, {
-    recursive: handle.kind === "directory",
-  });
-}
 
 // Open the DB from OPFS
 await db.open({
