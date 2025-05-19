@@ -68,6 +68,7 @@ await db.registerFileHandle(
 );
 
 // Step 4: Work with the file as normal
+await conn.send(`DROP TABLE IF EXISTS orders;`);
 await conn.send(
   `CREATE TABLE orders AS SELECT * FROM read_parquet('orders.parquet')`
 );
